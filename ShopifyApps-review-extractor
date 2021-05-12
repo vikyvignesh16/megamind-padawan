@@ -1,0 +1,86 @@
+from bs4 import BeautifulSoup
+import requests
+import re
+import csv
+
+webpage='https://apps.shopify.com/whatsapp-chat-button/reviews'
+page='https://apps.shopify.com/'
+page_number=""
+source=requests.get(webpage)
+soup=BeautifulSoup(source.text,'lxml')
+CompanyName=[]*10000
+ReviewScore=[]*10000
+ReviewText=[]*10000
+ReviewDate=[]*10000
+
+
+file=open('review_results1.csv','w',newline='')
+writer=csv.writer(file)
+writer.writerow(['Company_Name','Review_score','Review','Date_of_Review'])
+
+def pagination(webpage):
+    
+ source=requests.get(webpage)
+ soup=BeautifulSoup(source.text,'lxml')
+ test=soup.find_all('div',{'class':'review-listing'})
+ for x in range(0,len(test)):
+  companyname=test[x].find('h3',{'class':'review-listing-header__text'})
+  #print('Reviewer Name:' +companyname.text.strip())
+  CompanyName.append(str(companyname.text.strip()))
+  reviewscore1=test[x].find_all('div',{'class':'ui-star-rating__icon'})
+  count=len(reviewscore1)
+  #print(count)
+  reviewscore2=test[x].find('span',{'class':'ui-star-rating__rating visuallyhidden'})
+  #print('Review Score:' +reviewscore2.text.strip())
+  ReviewScore.append(str(reviewscore2.text.strip()))
+  data2=test[x].find('div',{'class':'truncate-content-copy'})
+  review=data2.find('p')
+  #print('Review:' +review.text.strip())
+  ReviewText.append(str(review.text.strip()))
+  data3=test[x].find_all('div',{'class':'review-metadata__item'})
+  #print(data3)
+  #print(len(data3))
+  for y in range(len(data3)):
+   data4=data3[y].find('div',{'class':'review-metadata__item-label'})
+   if(data4.text.strip()=='Posted' or data4.text.strip()=='Last edited'):
+    #data3=data[x].find('div',{'div':'review-metadata__item-value'}) 
+    #print(data3)
+    #print(data2)
+    #print(data[x])
+    date=data3[y].find('div',{'class':'review-metadata__item-value'})
+    ReviewDate.append((date.text.strip())) 
+    #print(reviewdate.text.strip())
+    break
+  #print('Date of review:' +reviewdate.text.strip())
+  
+  
+
+z=input("Please enter the number of pages to scrap: \n")
+z=int(z)
+if z==1:
+  pagination(webpage)
+if z > 1:
+ pagination(webpage)
+ for v in range(1,z):
+  source=requests.get(webpage)
+  soup=BeautifulSoup(source.text,'lxml')
+  data=soup.find('a',{'class':'search-pagination__next-page-text'})
+  #print(len(data))
+  page_number=str(data.get('href'))
+  #print(page_number)
+  webpage=page+page_number.strip()
+  pagination(webpage)
+
+print(CompanyName)
+print(len(CompanyName))
+#print(ReviewScore) 
+print(len(ReviewScore))
+#print(ReviewText)
+print(len(ReviewText))
+print(ReviewDate)
+print(len(ReviewDate))
+for p in range(len(CompanyName)):
+ writer.writerow([CompanyName[p],ReviewScore[p],ReviewText[p],ReviewDate[p]])
+ 
+print() 
+file.close()
